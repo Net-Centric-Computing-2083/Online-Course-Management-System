@@ -52,6 +52,7 @@ Visual Studio / Visual Studio Code
 
 # Setup
 bash
+
 Clone the repository
   git clone <repository-url>
 
