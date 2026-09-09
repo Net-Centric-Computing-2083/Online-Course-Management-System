@@ -1,7 +1,5 @@
 # Online Course Management System
 
-**Group 3**
-
 ## Description
 
 A web-based Course Management System that enables instructors to manage courses and lessons, students to register and enroll in courses, and both to track assignments and results. Built using Blazor WebAssembly with EF Core for data access, the system also features an interactive Student Learning Dashboard for monitoring academic progress at a glance.
