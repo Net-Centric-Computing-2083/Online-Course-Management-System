@@ -52,19 +52,19 @@ Visual Studio / Visual Studio Code
 
 # Setup
 bash
--Clone the repository
- git clone <repository-url>
+Clone the repository
+  git clone <repository-url>
 
-- Navigate to the project directory
+Navigate to the project directory
  cd OnlineCourseManagementSystem
 
-- Restore dependencies
+Restore dependencies
  dotnet restore
 
-- Apply database migrations
+Apply database migrations
  dotnet ef database update
 
-- Run the application
+Run the application
  dotnet run
 
 # License
