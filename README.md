@@ -11,13 +11,6 @@ A web-based Course Management System that enables instructors to manage courses 
 - **Frontend/Framework:** Blazor WebAssembly
 - **Database:** EF Core (Entity Framework Core)
 
-## Team Members
-
-- Ashna Shrestha
-- Babita Thami
-- Beni Raj Karki
-- Bhumika Tamang
-
 ## Overview
 
 The Online Course Management System is a web application built with Blazor WebAssembly that allows management of courses, instructors, and students, along with enrollment, lessons, assignments, and results tracking. The system also includes an interactive Student Learning Dashboard for tracking academic progress.
