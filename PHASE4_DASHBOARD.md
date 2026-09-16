@@ -159,7 +159,7 @@ GET    /api/results/{id}                   - Get result details
 ## Project Structure
 
 ```
-src/OnlineCourseManagement.Server/
+OnlineCourseManagement.Server/
 ├── Controllers/
 │   ├── LessonsController.cs
 │   ├── AssignmentsController.cs
@@ -185,7 +185,7 @@ src/OnlineCourseManagement.Server/
 │   └── ResultsRepository.cs
 └── Program.cs
 
-src/OnlineCourseManagement.Client/
+OnlineCourseManagement/
 ├── Pages/
 │   ├── CourseDetail.razor
 │   ├── Lessons.razor

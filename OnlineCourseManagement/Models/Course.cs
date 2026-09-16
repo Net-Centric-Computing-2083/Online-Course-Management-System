@@ -1,4 +1,4 @@
-namespace OnlineCourseManagement.Shared.Models
+namespace OnlineCourseManagement.Models
 {
     /// <summary>
     /// Represents a course in the online course management system

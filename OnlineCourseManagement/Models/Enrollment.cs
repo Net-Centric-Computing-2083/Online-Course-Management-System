@@ -1,4 +1,4 @@
-namespace OnlineCourseManagement.Shared.Models
+namespace OnlineCourseManagement.Models
 {
     /// <summary>
     /// Represents a student's enrollment in a course

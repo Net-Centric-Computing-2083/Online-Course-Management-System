@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using OnlineCourseManagement.Shared.Models;
+using OnlineCourseManagement.Models;
 
-namespace OnlineCourseManagement.Shared
+namespace OnlineCourseManagement.Data
 {
     /// <summary>
     /// Application Database Context for EF Core

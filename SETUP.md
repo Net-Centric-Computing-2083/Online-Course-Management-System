@@ -48,7 +48,7 @@ dotnet build
    dotnet tool install --global dotnet-ef
    
    # Create initial migration
-   cd src/OnlineCourseManagement.Shared
+   cd OnlineCourseManagement
    dotnet ef migrations add InitialCreate --project .
    
    # Update database
@@ -60,8 +60,8 @@ dotnet build
    - Configure SQL Server or SQLite connection string
 
 #### Key Files
-- `src/OnlineCourseManagement.Shared/ApplicationDbContext.cs`
-- `src/OnlineCourseManagement.Shared/Models/*.cs`
+- `OnlineCourseManagement/Data/ApplicationDbContext.cs`
+- `OnlineCourseManagement/Models/*.cs`
 
 ---
 
@@ -242,22 +242,22 @@ Tests/
 
 ```
 Online-Course-Management/
-├── src/
-│   ├── OnlineCourseManagement.Shared/          # Shared models & interfaces
-│   │   ├── Models/                              # Database entities
-│   │   ├── DTOs/                                # Data transfer objects
-│   │   ├── Interfaces/                          # Service interfaces
-│   │   └── ApplicationDbContext.cs              # EF Core context
-│   │
-│   └── OnlineCourseManagement.Client/           # Blazor WebAssembly frontend
-│       ├── Pages/                               # Razor pages
-│       ├── Components/                          # Reusable components
-│       ├── Services/                            # Client services
-│       └── wwwroot/                             # Static files
+├── OnlineCourseManagement/                      # Blazor WebAssembly project
+│   ├── Models/                                   # Database entities
+│   ├── DTOs/                                     # Data transfer objects
+│   ├── Interfaces/                               # Service interfaces
+│   ├── Data/ApplicationDbContext.cs              # EF Core context
+│   ├── Pages/                                    # Razor pages
+│   ├── Shared/                                   # MainLayout, NavMenu
+│   ├── Services/                                 # Client services
+│   ├── Properties/                               # launchSettings.json
+│   └── wwwroot/                                  # Static files
 │
-├── OnlineCourseManagement.sln                   # Solution file
-├── README.md                                    # Project overview
-└── SETUP.md                                     # This file
+├── OnlineCourseManagement.Server/                # Backend Web API (Phase 2+)
+│
+├── OnlineCourseManagement.sln                    # Solution file
+├── README.md                                     # Project overview
+└── SETUP.md                                      # This file
 ```
 
 ---

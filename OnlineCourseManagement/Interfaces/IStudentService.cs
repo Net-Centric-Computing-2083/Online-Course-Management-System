@@ -1,6 +1,6 @@
-using OnlineCourseManagement.Shared.DTOs;
+using OnlineCourseManagement.DTOs;
 
-namespace OnlineCourseManagement.Shared.Interfaces
+namespace OnlineCourseManagement.Interfaces
 {
     /// <summary>
     /// Interface for Student Service

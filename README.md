@@ -45,28 +45,26 @@ A comprehensive Blazor WebAssembly application for managing online courses, inst
 
 ```
 Online-Course-Management/
-├── src/
-│   ├── OnlineCourseManagement.Client/          # Blazor WebAssembly Frontend
-│   │   ├── Pages/
-│   │   ├── Components/
-│   │   ├── Services/
-│   │   └── wwwroot/
-│   │
-│   ├── OnlineCourseManagement.Server/          # Backend API (if needed)
-│   │   ├── Controllers/
-│   │   └── Services/
-│   │
-│   └── OnlineCourseManagement.Shared/          # Shared Models & DTOs
-│       ├── Models/
-│       ├── DTOs/
-│       └── Interfaces/
+├── OnlineCourseManagement/            # Blazor WebAssembly project (single project)
+│   ├── Pages/                          # Razor pages (routable)
+│   ├── Shared/                         # MainLayout, NavMenu
+│   ├── Properties/                     # launchSettings.json
+│   ├── wwwroot/                        # Static files (index.html, css)
+│   ├── Models/                         # EF Core entity models
+│   ├── DTOs/                           # Data transfer objects
+│   ├── Interfaces/                     # Service interfaces
+│   ├── Services/                       # Client-side service implementations
+│   ├── Data/                           # ApplicationDbContext (EF Core)
+│   ├── App.razor
+│   ├── _Imports.razor
+│   ├── Program.cs
+│   └── OnlineCourseManagement.csproj
 │
-├── Database/
-│   ├── Migrations/
-│   └── DbContext.cs
+├── OnlineCourseManagement.Server/     # Backend Web API (added in Phase 2)
+│   ├── Controllers/
+│   └── Services/
 │
-├── Tests/                                       # Unit & Integration Tests
-│
+├── OnlineCourseManagement.sln
 └── README.md
 ```
 
@@ -92,13 +90,15 @@ Online-Course-Management/
    dotnet restore
    ```
 
-3. **Setup Database**
+3. **Setup Database** (once the connection string is configured — see PHASE1_DATABASE.md)
    ```bash
+   cd OnlineCourseManagement
    dotnet ef database update
    ```
 
 4. **Run the application**
    ```bash
+   cd OnlineCourseManagement
    dotnet watch run
    ```
 

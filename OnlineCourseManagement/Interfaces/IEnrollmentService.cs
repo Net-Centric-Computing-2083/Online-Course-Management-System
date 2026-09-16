@@ -1,6 +1,6 @@
-using OnlineCourseManagement.Shared.Models;
+using OnlineCourseManagement.Models;
 
-namespace OnlineCourseManagement.Shared.Interfaces
+namespace OnlineCourseManagement.Interfaces
 {
     /// <summary>
     /// Interface for Enrollment Service

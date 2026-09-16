@@ -1,8 +1,8 @@
 using System.Net.Http.Json;
-using OnlineCourseManagement.Shared.Interfaces;
-using OnlineCourseManagement.Shared.Models;
+using OnlineCourseManagement.Interfaces;
+using OnlineCourseManagement.Models;
 
-namespace OnlineCourseManagement.Client.Services
+namespace OnlineCourseManagement.Services
 {
     /// <summary>
     /// Client-side service for Enrollment operations

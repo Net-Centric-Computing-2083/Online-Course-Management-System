@@ -1,4 +1,4 @@
-namespace OnlineCourseManagement.Shared.DTOs
+namespace OnlineCourseManagement.DTOs
 {
     /// <summary>
     /// DTO for Course - used for API communication

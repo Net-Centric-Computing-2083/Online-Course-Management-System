@@ -31,7 +31,7 @@ The following tables have been designed:
 - Cascade delete configured
 
 ### 3. Model Classes ✓
-All entity models created in `src/OnlineCourseManagement.Shared/Models/`:
+All entity models created in `OnlineCourseManagement/Models/`:
 - Student.cs
 - Instructor.cs
 - Course.cs
@@ -51,7 +51,7 @@ dotnet tool install --global dotnet-ef
 
 ### 2. Create Initial Migration
 ```bash
-cd src/OnlineCourseManagement.Shared
+cd OnlineCourseManagement
 dotnet ef migrations add InitialCreate --project .
 ```
 
@@ -74,8 +74,9 @@ Update `appsettings.json` with your database connection string:
 This project will host the API endpoints for all other phases:
 
 ```bash
-cd src
+cd Online-Course-Management
 dotnet new webapi -n OnlineCourseManagement.Server
+dotnet sln add OnlineCourseManagement.Server/OnlineCourseManagement.Server.csproj
 ```
 
 Configure in `Program.cs`:
@@ -89,7 +90,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 ## Key Files Modified/Created
 
 ```
-src/OnlineCourseManagement.Shared/
+OnlineCourseManagement/
 ├── Models/
 │   ├── Student.cs
 │   ├── Instructor.cs
@@ -102,8 +103,9 @@ src/OnlineCourseManagement.Shared/
 │   └── (To be used by Phase 2+)
 ├── Interfaces/
 │   └── (To be used by Phase 2+)
-├── ApplicationDbContext.cs ✓
-└── OnlineCourseManagement.Shared.csproj ✓
+├── Data/
+│   └── ApplicationDbContext.cs ✓
+└── OnlineCourseManagement.csproj ✓
 ```
 
 ---

@@ -92,7 +92,7 @@ GET /api/courses/search?title=...&level=...&instructorId=...
 ## Project Structure
 
 ```
-src/OnlineCourseManagement.Server/
+OnlineCourseManagement.Server/
 ├── Controllers/
 │   ├── CoursesController.cs
 │   └── InstructorsController.cs
@@ -110,7 +110,7 @@ src/OnlineCourseManagement.Server/
 │   └── InstructorsRepository.cs
 └── Program.cs
 
-src/OnlineCourseManagement.Client/
+OnlineCourseManagement/
 ├── Pages/
 │   ├── ManageCourses.razor
 │   └── ManageInstructors.razor

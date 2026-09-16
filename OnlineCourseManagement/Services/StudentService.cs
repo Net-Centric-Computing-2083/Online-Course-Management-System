@@ -1,8 +1,8 @@
 using System.Net.Http.Json;
-using OnlineCourseManagement.Shared.DTOs;
-using OnlineCourseManagement.Shared.Interfaces;
+using OnlineCourseManagement.DTOs;
+using OnlineCourseManagement.Interfaces;
 
-namespace OnlineCourseManagement.Client.Services
+namespace OnlineCourseManagement.Services
 {
     /// <summary>
     /// Client-side service for Student operations

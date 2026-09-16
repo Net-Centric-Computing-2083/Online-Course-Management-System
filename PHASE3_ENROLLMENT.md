@@ -115,7 +115,7 @@ public async Task<bool> ValidateEnrollment(int studentId, int courseId)
 ## Project Structure
 
 ```
-src/OnlineCourseManagement.Server/
+OnlineCourseManagement.Server/
 ├── Controllers/
 │   ├── StudentsController.cs
 │   └── EnrollmentsController.cs
@@ -140,7 +140,7 @@ src/OnlineCourseManagement.Server/
 │   └── AuthModels.cs
 └── Program.cs
 
-src/OnlineCourseManagement.Client/
+OnlineCourseManagement/
 ├── Pages/
 │   ├── Register.razor
 │   ├── Login.razor

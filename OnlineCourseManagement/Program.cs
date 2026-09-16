@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using OnlineCourseManagement.Client;
-using OnlineCourseManagement.Client.Services;
-using OnlineCourseManagement.Shared.Interfaces;
+using OnlineCourseManagement;
+using OnlineCourseManagement.Interfaces;
+using OnlineCourseManagement.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

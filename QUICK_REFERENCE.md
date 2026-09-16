@@ -13,7 +13,8 @@ dotnet restore
 # Build solution
 dotnet build
 
-# Run (when ready)
+# Run the app (must run from inside the project folder)
+cd OnlineCourseManagement
 dotnet run
 ```
 
@@ -25,8 +26,8 @@ dotnet run
 # Install EF Core tools (one time)
 dotnet tool install --global dotnet-ef
 
-# Navigate to Shared project
-cd src/OnlineCourseManagement.Shared
+# Navigate to the project
+cd OnlineCourseManagement
 
 # Create migration
 dotnet ef migrations add InitialCreate
@@ -55,10 +56,10 @@ dotnet ef database update
 cat PHASE2_MANAGEMENT.md
 
 # Key files to create:
-# - src/OnlineCourseManagement.Server/Controllers/CoursesController.cs
-# - src/OnlineCourseManagement.Server/Controllers/InstructorsController.cs
-# - src/OnlineCourseManagement.Server/Services/CoursesService.cs
-# - src/OnlineCourseManagement.Server/Services/InstructorsService.cs
+# - OnlineCourseManagement.Server/Controllers/CoursesController.cs
+# - OnlineCourseManagement.Server/Controllers/InstructorsController.cs
+# - OnlineCourseManagement.Server/Services/CoursesService.cs
+# - OnlineCourseManagement.Server/Services/InstructorsService.cs
 
 # Test API endpoints (using Postman or curl)
 curl https://localhost:5001/api/courses
@@ -88,14 +89,14 @@ curl https://localhost:5001/api/courses
 cat PHASE3_ENROLLMENT.md
 
 # Key files to create:
-# - src/OnlineCourseManagement.Server/Controllers/StudentsController.cs
-# - src/OnlineCourseManagement.Server/Controllers/EnrollmentsController.cs
-# - src/OnlineCourseManagement.Server/Services/StudentService.cs
-# - src/OnlineCourseManagement.Server/Services/AuthService.cs
-# - src/OnlineCourseManagement.Server/Utilities/PasswordHasher.cs
+# - OnlineCourseManagement.Server/Controllers/StudentsController.cs
+# - OnlineCourseManagement.Server/Controllers/EnrollmentsController.cs
+# - OnlineCourseManagement.Server/Services/StudentService.cs
+# - OnlineCourseManagement.Server/Services/AuthService.cs
+# - OnlineCourseManagement.Server/Utilities/PasswordHasher.cs
 
 # Install BCrypt for password hashing
-cd src/OnlineCourseManagement.Server
+cd OnlineCourseManagement.Server
 dotnet add package BCrypt.Net-Next
 
 # Test authentication endpoints
@@ -124,13 +125,13 @@ curl -X POST https://localhost:5001/api/students/register \
 cat PHASE4_DASHBOARD.md
 
 # Key files to create:
-# - src/OnlineCourseManagement.Server/Controllers/LessonsController.cs
-# - src/OnlineCourseManagement.Server/Controllers/AssignmentsController.cs
-# - src/OnlineCourseManagement.Server/Controllers/ResultsController.cs
-# - src/OnlineCourseManagement.Server/Services/LessonsService.cs
-# - src/OnlineCourseManagement.Server/Services/AssignmentsService.cs
-# - src/OnlineCourseManagement.Server/Services/ResultsService.cs
-# - src/OnlineCourseManagement.Server/Services/DashboardService.cs
+# - OnlineCourseManagement.Server/Controllers/LessonsController.cs
+# - OnlineCourseManagement.Server/Controllers/AssignmentsController.cs
+# - OnlineCourseManagement.Server/Controllers/ResultsController.cs
+# - OnlineCourseManagement.Server/Services/LessonsService.cs
+# - OnlineCourseManagement.Server/Services/AssignmentsService.cs
+# - OnlineCourseManagement.Server/Services/ResultsService.cs
+# - OnlineCourseManagement.Server/Services/DashboardService.cs
 
 # Create Blazor pages:
 # - Pages/Lessons.razor
