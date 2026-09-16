@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using OnlineCourseManagement.Shared.DTOs;
 using OnlineCourseManagement.Shared.Interfaces;
 
@@ -89,7 +90,7 @@ namespace OnlineCourseManagement.Client.Services
                 var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/login", loginRequest);
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsAsync<StudentDTO>();
+                    return await response.Content.ReadFromJsonAsync<StudentDTO>();
                 }
                 return null;
             }
