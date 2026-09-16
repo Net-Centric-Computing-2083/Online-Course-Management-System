@@ -1,100 +1,100 @@
-using System.Net.Http.Json;
 using OnlineCourseManagement.Interfaces;
 using OnlineCourseManagement.Models;
 
 namespace OnlineCourseManagement.Services
 {
     /// <summary>
-    /// Client-side service for Enrollment operations
+    /// In-memory implementation of Enrollment operations, backed by AppDataStore.
     /// Author: Beni Raj Karki (Phase 3)
     /// </summary>
     public class EnrollmentService : IEnrollmentService
     {
-        private readonly HttpClient _httpClient;
-        private const string BaseUrl = "api/enrollments";
+        private readonly AppDataStore _store;
 
-        public EnrollmentService(HttpClient httpClient)
+        public EnrollmentService(AppDataStore store)
         {
-            _httpClient = httpClient;
+            _store = store;
         }
 
-        public async Task<List<Enrollment>> GetStudentEnrollmentsAsync(int studentId)
+        public Task<List<Enrollment>> GetStudentEnrollmentsAsync(int studentId)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<List<Enrollment>>($"{BaseUrl}/student/{studentId}") ?? new List<Enrollment>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching enrollments: {ex.Message}");
-                return new List<Enrollment>();
-            }
+            var result = _store.Enrollments.Where(e => e.StudentId == studentId).ToList();
+            return Task.FromResult(result);
         }
 
-        public async Task<List<Enrollment>> GetCourseEnrollmentsAsync(int courseId)
+        public Task<List<Enrollment>> GetCourseEnrollmentsAsync(int courseId)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<List<Enrollment>>($"{BaseUrl}/course/{courseId}") ?? new List<Enrollment>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching course enrollments: {ex.Message}");
-                return new List<Enrollment>();
-            }
+            var result = _store.Enrollments.Where(e => e.CourseId == courseId).ToList();
+            return Task.FromResult(result);
         }
 
         public async Task<int> EnrollStudentAsync(int studentId, int courseId)
         {
-            try
+            if (!await ValidateEnrollmentAsync(studentId, courseId))
             {
-                var enrollmentRequest = new { StudentId = studentId, CourseId = courseId };
-                var response = await _httpClient.PostAsJsonAsync(BaseUrl, enrollmentRequest);
-                return response.IsSuccessStatusCode ? 1 : 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error enrolling student: {ex.Message}");
                 return 0;
             }
+
+            var entity = new Enrollment
+            {
+                Id = _store.NextEnrollmentId(),
+                StudentId = studentId,
+                CourseId = courseId,
+                EnrollmentDate = DateTime.Today,
+                Status = "Active",
+                Progress = 0,
+                GPA = 0,
+                IsApproved = true
+            };
+            _store.Enrollments.Add(entity);
+            return entity.Id;
         }
 
-        public async Task UpdateEnrollmentAsync(Enrollment enrollment)
+        public Task UpdateEnrollmentAsync(Enrollment enrollment)
         {
-            try
+            var entity = _store.Enrollments.FirstOrDefault(e => e.Id == enrollment.Id);
+            if (entity != null)
             {
-                await _httpClient.PutAsJsonAsync($"{BaseUrl}/{enrollment.Id}", enrollment);
+                entity.Status = enrollment.Status;
+                entity.Progress = enrollment.Progress;
+                entity.GPA = enrollment.GPA;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating enrollment: {ex.Message}");
-            }
+            return Task.CompletedTask;
         }
 
-        public async Task<bool> ValidateEnrollmentAsync(int studentId, int courseId)
+        public Task<bool> ValidateEnrollmentAsync(int studentId, int courseId)
         {
-            try
+            var student = _store.Students.FirstOrDefault(s => s.Id == studentId);
+            var course = _store.Courses.FirstOrDefault(c => c.Id == courseId);
+            if (student == null || !student.IsActive || course == null || !course.IsActive)
             {
-                var response = await _httpClient.GetAsync($"{BaseUrl}/validate?studentId={studentId}&courseId={courseId}");
-                return response.IsSuccessStatusCode;
+                return Task.FromResult(false);
             }
-            catch (Exception ex)
+
+            bool alreadyEnrolled = _store.Enrollments.Any(e =>
+                e.StudentId == studentId && e.CourseId == courseId && e.Status != "Dropped");
+            if (alreadyEnrolled)
             {
-                Console.WriteLine($"Error validating enrollment: {ex.Message}");
-                return false;
+                return Task.FromResult(false);
             }
+
+            int activeCount = _store.Enrollments.Count(e => e.CourseId == courseId && e.Status != "Dropped");
+            if (activeCount >= course.MaxStudents)
+            {
+                return Task.FromResult(false);
+            }
+
+            return Task.FromResult(true);
         }
 
-        public async Task DropCourseAsync(int enrollmentId)
+        public Task DropCourseAsync(int enrollmentId)
         {
-            try
+            var entity = _store.Enrollments.FirstOrDefault(e => e.Id == enrollmentId);
+            if (entity != null)
             {
-                await _httpClient.DeleteAsync($"{BaseUrl}/{enrollmentId}");
+                entity.Status = "Dropped";
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error dropping course: {ex.Message}");
-            }
+            return Task.CompletedTask;
         }
     }
 }

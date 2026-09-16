@@ -1,104 +1,104 @@
-using System.Net.Http.Json;
 using OnlineCourseManagement.DTOs;
 using OnlineCourseManagement.Interfaces;
+using OnlineCourseManagement.Models;
 
 namespace OnlineCourseManagement.Services
 {
     /// <summary>
-    /// Client-side service for Student operations
+    /// In-memory implementation of Student operations, backed by AppDataStore.
     /// Author: Beni Raj Karki (Phase 3)
     /// </summary>
     public class StudentService : IStudentService
     {
-        private readonly HttpClient _httpClient;
-        private const string BaseUrl = "api/students";
+        private readonly AppDataStore _store;
 
-        public StudentService(HttpClient httpClient)
+        public StudentService(AppDataStore store)
         {
-            _httpClient = httpClient;
+            _store = store;
         }
 
-        public async Task<List<StudentDTO>> GetAllStudentsAsync()
+        public Task<List<StudentDTO>> GetAllStudentsAsync()
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<List<StudentDTO>>(BaseUrl) ?? new List<StudentDTO>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching students: {ex.Message}");
-                return new List<StudentDTO>();
-            }
+            var result = _store.Students.Select(ToDto).OrderBy(s => s.LastName).ToList();
+            return Task.FromResult(result);
         }
 
-        public async Task<StudentDTO> GetStudentByIdAsync(int id)
+        public Task<StudentDTO> GetStudentByIdAsync(int id)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<StudentDTO>($"{BaseUrl}/{id}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching student: {ex.Message}");
-                return null;
-            }
+            var student = _store.Students.FirstOrDefault(s => s.Id == id);
+            return Task.FromResult(student == null ? null : ToDto(student));
         }
 
-        public async Task<int> RegisterStudentAsync(StudentDTO student)
+        public Task<int> RegisterStudentAsync(StudentDTO student)
         {
-            try
+            if (_store.Students.Any(s => s.Email.Equals(student.Email, StringComparison.OrdinalIgnoreCase)))
             {
-                var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/register", student);
-                return response.IsSuccessStatusCode ? 1 : 0;
+                return Task.FromResult(0);
             }
-            catch (Exception ex)
+
+            var entity = new Student
             {
-                Console.WriteLine($"Error registering student: {ex.Message}");
-                return 0;
-            }
+                Id = _store.NextStudentId(),
+                FirstName = student.FirstName,
+                LastName = student.LastName,
+                Email = student.Email,
+                PhoneNumber = student.PhoneNumber,
+                PasswordHash = "demo", // Phase 3: replace with real password hashing once wired to a backend
+                DateOfBirth = student.DateOfBirth,
+                Address = student.Address,
+                EnrollmentDate = DateTime.Today,
+                IsActive = true
+            };
+            _store.Students.Add(entity);
+            return Task.FromResult(entity.Id);
         }
 
-        public async Task UpdateStudentAsync(StudentDTO student)
+        public Task UpdateStudentAsync(StudentDTO student)
         {
-            try
+            var entity = _store.Students.FirstOrDefault(s => s.Id == student.Id);
+            if (entity != null)
             {
-                await _httpClient.PutAsJsonAsync($"{BaseUrl}/{student.Id}", student);
+                entity.FirstName = student.FirstName;
+                entity.LastName = student.LastName;
+                entity.Email = student.Email;
+                entity.PhoneNumber = student.PhoneNumber;
+                entity.DateOfBirth = student.DateOfBirth;
+                entity.Address = student.Address;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating student: {ex.Message}");
-            }
+            return Task.CompletedTask;
         }
 
-        public async Task DeleteStudentAsync(int id)
+        public Task DeleteStudentAsync(int id)
         {
-            try
+            var entity = _store.Students.FirstOrDefault(s => s.Id == id);
+            if (entity != null)
             {
-                await _httpClient.DeleteAsync($"{BaseUrl}/{id}");
+                _store.Students.Remove(entity);
+                _store.Enrollments.RemoveAll(e => e.StudentId == id);
+                _store.Results.RemoveAll(r => r.StudentId == id);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error deleting student: {ex.Message}");
-            }
+            return Task.CompletedTask;
         }
 
-        public async Task<StudentDTO> LoginAsync(string email, string password)
+        public Task<StudentDTO> LoginAsync(string email, string password)
         {
-            try
-            {
-                var loginRequest = new { Email = email, Password = password };
-                var response = await _httpClient.PostAsJsonAsync($"{BaseUrl}/login", loginRequest);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<StudentDTO>();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error logging in: {ex.Message}");
-                return null;
-            }
+            // Demo-only lookup by email. Real authentication (password hashing and
+            // verification) will be added once this is wired up to a backend in Phase 3.
+            var student = _store.Students.FirstOrDefault(s => s.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+            return Task.FromResult(student == null ? null : ToDto(student));
         }
+
+        private static StudentDTO ToDto(Student s) => new StudentDTO
+        {
+            Id = s.Id,
+            FirstName = s.FirstName,
+            LastName = s.LastName,
+            Email = s.Email,
+            PhoneNumber = s.PhoneNumber,
+            DateOfBirth = s.DateOfBirth,
+            Address = s.Address,
+            EnrollmentDate = s.EnrollmentDate,
+            IsActive = s.IsActive
+        };
     }
 }

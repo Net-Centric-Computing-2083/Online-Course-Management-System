@@ -1,16 +1,254 @@
 @page "/dashboard"
+@inject IStudentService StudentService
+@inject ICourseService CourseService
+@inject IEnrollmentService EnrollmentService
+@inject ILessonService LessonService
+@inject IAssignmentService AssignmentService
+@inject IResultService ResultService
 
 <PageTitle>Student Dashboard</PageTitle>
 
-<h1>Your Learning Dashboard</h1>
-<p>Track your enrolled courses and progress.</p>
-
-<div class="row mt-4">
-    <div class="col-md-12">
-        <h3>Enrolled Courses</h3>
-        <p class="text-muted">You haven't enrolled in any courses yet.</p>
+<div class="page-header">
+    <div>
+        <h1>Student Dashboard</h1>
+        <p class="text-muted mb-0">View a student's enrolled courses, lesson progress, assignments and results.</p>
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-6">
+        <label class="form-label">Viewing as Student</label>
+        <select class="form-select" @bind="selectedStudentId" @bind:after="LoadDashboard">
+            <option value="0">-- Select a student --</option>
+            @foreach (var student in students)
+            {
+                <option value="@student.Id">@student.FirstName @student.LastName</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (selectedStudentId == 0)
+{
+    <div class="empty-state"><p>Select a student above to view their dashboard.</p></div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="fs-3 fw-bold text-primary">@enrolledCourses.Count</div>
+                <div class="text-muted">Enrolled Courses</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="fs-3 fw-bold text-primary">@totalCompletedLessons / @totalLessons</div>
+                <div class="text-muted">Completed Lessons</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="fs-3 fw-bold text-primary">@pendingAssignments.Count</div>
+                <div class="text-muted">Pending Assignments</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="fs-3 fw-bold text-primary">@results.Count</div>
+                <div class="text-muted">Graded Results</div>
+            </div>
+        </div>
+    </div>
+
+    <h5>Enrolled Courses &amp; Lesson Progress</h5>
+    @if (enrolledCourses.Count == 0)
+    {
+        <div class="empty-state"><p>Not enrolled in any courses yet.</p></div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            @foreach (var item in enrolledCourses)
+            {
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title mb-1">@item.Course.Title</h6>
+                                <span class="badge @StatusBadgeClass(item.Enrollment.Status)">@item.Enrollment.Status</span>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" style="width:@(item.LessonProgressPercent)%"></div>
+                            </div>
+                            <small class="text-muted d-block mb-2">@item.CompletedLessonIds.Count of @item.Lessons.Count lessons completed</small>
+
+                            @if (item.Lessons.Count > 0)
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var lesson in item.Lessons.OrderBy(l => l.OrderNumber))
+                                    {
+                                        <li class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   id="@($"lesson-{lesson.Id}")"
+                                                   checked="@item.CompletedLessonIds.Contains(lesson.Id)"
+                                                   @onchange="e => ToggleLesson(item, lesson.Id, (bool)(e.Value ?? false))" />
+                                            <label class="form-check-label" for="@($"lesson-{lesson.Id}")">@lesson.Title</label>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <h5>Pending Assignments</h5>
+            @if (pendingAssignments.Count == 0)
+            {
+                <div class="empty-state"><p>No pending assignments. 🎉</p></div>
+            }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var a in pendingAssignments.OrderBy(a => a.DueDate))
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">@a.Title</div>
+                                <small class="text-muted">@a.AssignmentType &middot; Due @a.DueDate.ToString("MMM dd, yyyy")</small>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+        <div class="col-md-6">
+            <h5>Recent Results</h5>
+            @if (results.Count == 0)
+            {
+                <div class="empty-state"><p>No graded results yet.</p></div>
+            }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var r in results)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>@AssignmentTitle(r.AssignmentId)</div>
+                            <span class="badge bg-primary">@r.MarksObtained</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+}
+
 @code {
+    private class EnrolledCourseView
+    {
+        public CourseDTO Course { get; set; } = new();
+        public Enrollment Enrollment { get; set; } = new();
+        public List<Lesson> Lessons { get; set; } = new();
+        public HashSet<int> CompletedLessonIds { get; set; } = new();
+        public int LessonProgressPercent => Lessons.Count == 0 ? 0 : (int)Math.Round(CompletedLessonIds.Count * 100.0 / Lessons.Count);
+    }
+
+    private List<StudentDTO> students = new();
+    private int selectedStudentId;
+    private List<EnrolledCourseView> enrolledCourses = new();
+    private List<Assignment> pendingAssignments = new();
+    private List<Result> results = new();
+    private List<CourseDTO> allCourses = new();
+    private List<Assignment> allAssignments = new();
+    private int totalCompletedLessons;
+    private int totalLessons;
+
+    protected override async Task OnInitializedAsync()
+    {
+        students = await StudentService.GetAllStudentsAsync();
+        allCourses = await CourseService.GetAllCoursesAsync();
+    }
+
+    private async Task LoadDashboard()
+    {
+        enrolledCourses = new List<EnrolledCourseView>();
+        pendingAssignments = new List<Assignment>();
+        results = new List<Result>();
+        allAssignments = new List<Assignment>();
+        totalCompletedLessons = 0;
+        totalLessons = 0;
+
+        if (selectedStudentId == 0)
+        {
+            return;
+        }
+
+        var myEnrollments = (await EnrollmentService.GetStudentEnrollmentsAsync(selectedStudentId))
+            .Where(e => e.Status != "Dropped")
+            .ToList();
+
+        foreach (var enrollment in myEnrollments)
+        {
+            var course = allCourses.FirstOrDefault(c => c.Id == enrollment.CourseId);
+            if (course == null)
+            {
+                continue;
+            }
+
+            var lessons = await LessonService.GetLessonsByCourseAsync(course.Id);
+            var completedIds = await LessonService.GetCompletedLessonIdsAsync(selectedStudentId, course.Id);
+
+            enrolledCourses.Add(new EnrolledCourseView
+            {
+                Course = course,
+                Enrollment = enrollment,
+                Lessons = lessons,
+                CompletedLessonIds = completedIds
+            });
+
+            totalLessons += lessons.Count;
+            totalCompletedLessons += completedIds.Count;
+
+            var assignments = await AssignmentService.GetAssignmentsByCourseAsync(course.Id);
+            allAssignments.AddRange(assignments.Where(a => !allAssignments.Any(x => x.Id == a.Id)));
+            pendingAssignments.AddRange(assignments.Where(a => a.IsPublished && a.DueDate >= DateTime.Today));
+        }
+
+        results = await ResultService.GetResultsByStudentAsync(selectedStudentId);
+    }
+
+    private async Task ToggleLesson(EnrolledCourseView item, int lessonId, bool isComplete)
+    {
+        await LessonService.MarkLessonCompleteAsync(selectedStudentId, lessonId, isComplete);
+
+        if (isComplete && item.CompletedLessonIds.Add(lessonId))
+        {
+            totalCompletedLessons++;
+        }
+        else if (!isComplete && item.CompletedLessonIds.Remove(lessonId))
+        {
+            totalCompletedLessons--;
+        }
+    }
+
+    private string AssignmentTitle(int assignmentId)
+    {
+        var assignment = allAssignments.FirstOrDefault(a => a.Id == assignmentId);
+        return assignment?.Title ?? "Assignment";
+    }
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Active" => "badge-status-active",
+        "Completed" => "badge-status-completed",
+        "Dropped" => "badge-status-dropped",
+        "Paused" => "badge-status-paused",
+        _ => "bg-secondary"
+    };
 }

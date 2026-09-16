@@ -4,6 +4,8 @@ A comprehensive Blazor WebAssembly application for managing online courses, inst
 
 **Technology Stack:** Blazor WebAssembly | Entity Framework Core | .NET 8
 
+> **Current status:** Courses, Instructors, Students, Enrollment, Lessons, Assignments, Results and the Dashboard are all fully interactive today — add/edit/delete, search, enroll, grade, and track lesson completion all work when you run the app. They run against an in-memory data store seeded with sample data (see `Services/AppDataStore.cs`) rather than the real database, since the `OnlineCourseManagement.Server` API + SQL database from Phase 1/2 aren't wired up yet. Data resets on every page refresh until that's done — swapping the `Services/*.cs` implementations to call the real API is the remaining Phase 1/2 work.
+
 ---
 
 ## 👥 Team Members

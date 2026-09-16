@@ -1,0 +1,183 @@
+@page "/students"
+@inject IStudentService StudentService
+@inject IJSRuntime JS
+
+<PageTitle>Students</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Students</h1>
+        <p class="text-muted mb-0">Register new students and manage existing ones.</p>
+    </div>
+    <button class="btn btn-primary" @onclick="ShowAddForm">+ Register Student</button>
+</div>
+
+@if (showForm)
+{
+    <div class="form-card">
+        <h5>@(editingId == null ? "Register New Student" : "Edit Student")</h5>
+        <EditForm Model="formModel" OnValidSubmit="SaveStudent">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">First Name</label>
+                    <InputText class="form-control" @bind-Value="formModel.FirstName" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Last Name</label>
+                    <InputText class="form-control" @bind-Value="formModel.LastName" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" type="email" @bind-Value="formModel.Email" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Phone Number</label>
+                    <InputText class="form-control" @bind-Value="formModel.PhoneNumber" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date of Birth</label>
+                    <InputDate class="form-control" @bind-Value="formModel.DateOfBirth" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Address</label>
+                    <InputText class="form-control" @bind-Value="formModel.Address" />
+                </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="CancelForm">Cancel</button>
+            </div>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger mt-3 mb-0">@errorMessage</div>
+            }
+        </EditForm>
+    </div>
+}
+
+@if (students == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (students.Count == 0)
+{
+    <div class="empty-state"><p>No students registered yet.</p></div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Registered</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in students)
+                {
+                    <tr>
+                        <td class="fw-semibold">@student.FirstName @student.LastName</td>
+                        <td>@student.Email</td>
+                        <td>@student.PhoneNumber</td>
+                        <td>@student.EnrollmentDate.ToString("MMM dd, yyyy")</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditStudent(student)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteStudent(student.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<StudentDTO> students = new();
+    private StudentDTO formModel = new();
+    private bool showForm;
+    private int? editingId;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudents();
+    }
+
+    private async Task LoadStudents()
+    {
+        students = await StudentService.GetAllStudentsAsync();
+    }
+
+    private void ShowAddForm()
+    {
+        formModel = new StudentDTO { DateOfBirth = new DateTime(2002, 1, 1) };
+        editingId = null;
+        errorMessage = string.Empty;
+        showForm = true;
+    }
+
+    private void EditStudent(StudentDTO student)
+    {
+        formModel = new StudentDTO
+        {
+            Id = student.Id,
+            FirstName = student.FirstName,
+            LastName = student.LastName,
+            Email = student.Email,
+            PhoneNumber = student.PhoneNumber,
+            DateOfBirth = student.DateOfBirth,
+            Address = student.Address
+        };
+        editingId = student.Id;
+        errorMessage = string.Empty;
+        showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+        errorMessage = string.Empty;
+    }
+
+    private async Task SaveStudent()
+    {
+        if (string.IsNullOrWhiteSpace(formModel.FirstName) || string.IsNullOrWhiteSpace(formModel.LastName) || string.IsNullOrWhiteSpace(formModel.Email))
+        {
+            errorMessage = "First name, last name and email are required.";
+            return;
+        }
+
+        if (editingId == null)
+        {
+            var newId = await StudentService.RegisterStudentAsync(formModel);
+            if (newId == 0)
+            {
+                errorMessage = "A student with this email is already registered.";
+                return;
+            }
+        }
+        else
+        {
+            formModel.Id = editingId.Value;
+            await StudentService.UpdateStudentAsync(formModel);
+        }
+
+        showForm = false;
+        await LoadStudents();
+    }
+
+    private async Task DeleteStudent(int id)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Delete this student? This will also remove their enrollments and results.");
+        if (!confirmed)
+        {
+            return;
+        }
+        await StudentService.DeleteStudentAsync(id);
+        await LoadStudents();
+    }
+}

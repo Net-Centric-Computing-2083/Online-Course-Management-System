@@ -1,111 +1,131 @@
-using System.Net.Http.Json;
 using OnlineCourseManagement.DTOs;
 using OnlineCourseManagement.Interfaces;
+using OnlineCourseManagement.Models;
 
 namespace OnlineCourseManagement.Services
 {
     /// <summary>
-    /// Client-side service for Course operations
+    /// In-memory implementation of Course operations, backed by AppDataStore.
     /// Author: Babita Thami (Phase 2)
     /// </summary>
     public class CourseService : ICourseService
     {
-        private readonly HttpClient _httpClient;
-        private const string BaseUrl = "api/courses";
+        private readonly AppDataStore _store;
 
-        public CourseService(HttpClient httpClient)
+        public CourseService(AppDataStore store)
         {
-            _httpClient = httpClient;
+            _store = store;
         }
 
-        public async Task<List<CourseDTO>> GetAllCoursesAsync()
+        public Task<List<CourseDTO>> GetAllCoursesAsync()
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<List<CourseDTO>>(BaseUrl) ?? new List<CourseDTO>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching courses: {ex.Message}");
-                return new List<CourseDTO>();
-            }
+            var result = _store.Courses.Select(ToDto).OrderBy(c => c.Title).ToList();
+            return Task.FromResult(result);
         }
 
-        public async Task<CourseDTO> GetCourseByIdAsync(int id)
+        public Task<CourseDTO> GetCourseByIdAsync(int id)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<CourseDTO>($"{BaseUrl}/{id}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching course {id}: {ex.Message}");
-                return null;
-            }
+            var course = _store.Courses.FirstOrDefault(c => c.Id == id);
+            return Task.FromResult(course == null ? null : ToDto(course));
         }
 
-        public async Task<int> AddCourseAsync(CourseDTO course)
+        public Task<int> AddCourseAsync(CourseDTO course)
         {
-            try
+            var entity = new Course
             {
-                var response = await _httpClient.PostAsJsonAsync(BaseUrl, course);
-                return response.IsSuccessStatusCode ? 1 : 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error adding course: {ex.Message}");
-                return 0;
-            }
+                Id = _store.NextCourseId(),
+                Title = course.Title,
+                Description = course.Description,
+                Code = course.Code,
+                InstructorId = course.InstructorId,
+                Duration = course.Duration,
+                MaxStudents = course.MaxStudents,
+                Credits = course.Credits,
+                Level = course.Level,
+                CreatedDate = DateTime.Today,
+                StartDate = course.StartDate,
+                EndDate = course.EndDate,
+                IsActive = true
+            };
+            _store.Courses.Add(entity);
+            return Task.FromResult(entity.Id);
         }
 
-        public async Task UpdateCourseAsync(CourseDTO course)
+        public Task UpdateCourseAsync(CourseDTO course)
         {
-            try
+            var entity = _store.Courses.FirstOrDefault(c => c.Id == course.Id);
+            if (entity != null)
             {
-                await _httpClient.PutAsJsonAsync($"{BaseUrl}/{course.Id}", course);
+                entity.Title = course.Title;
+                entity.Description = course.Description;
+                entity.Code = course.Code;
+                entity.InstructorId = course.InstructorId;
+                entity.Duration = course.Duration;
+                entity.MaxStudents = course.MaxStudents;
+                entity.Credits = course.Credits;
+                entity.Level = course.Level;
+                entity.StartDate = course.StartDate;
+                entity.EndDate = course.EndDate;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating course: {ex.Message}");
-            }
+            return Task.CompletedTask;
         }
 
-        public async Task DeleteCourseAsync(int id)
+        public Task DeleteCourseAsync(int id)
         {
-            try
+            var entity = _store.Courses.FirstOrDefault(c => c.Id == id);
+            if (entity != null)
             {
-                await _httpClient.DeleteAsync($"{BaseUrl}/{id}");
+                _store.Courses.Remove(entity);
+                _store.Enrollments.RemoveAll(e => e.CourseId == id);
+                _store.Lessons.RemoveAll(l => l.CourseId == id);
+                _store.Assignments.RemoveAll(a => a.CourseId == id);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error deleting course: {ex.Message}");
-            }
+            return Task.CompletedTask;
         }
 
-        public async Task<List<CourseDTO>> SearchCoursesAsync(string searchTerm)
+        public Task<List<CourseDTO>> SearchCoursesAsync(string searchTerm)
         {
-            try
+            var term = (searchTerm ?? string.Empty).Trim();
+            IEnumerable<Course> query = _store.Courses;
+            if (!string.IsNullOrEmpty(term))
             {
-                return await _httpClient.GetFromJsonAsync<List<CourseDTO>>($"{BaseUrl}/search?term={searchTerm}") ?? new List<CourseDTO>();
+                query = query.Where(c =>
+                    c.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    c.Code.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    c.Level.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                    GetInstructorName(c.InstructorId).Contains(term, StringComparison.OrdinalIgnoreCase));
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error searching courses: {ex.Message}");
-                return new List<CourseDTO>();
-            }
+            var result = query.Select(ToDto).OrderBy(c => c.Title).ToList();
+            return Task.FromResult(result);
         }
 
-        public async Task<List<CourseDTO>> GetCoursesByInstructorAsync(int instructorId)
+        public Task<List<CourseDTO>> GetCoursesByInstructorAsync(int instructorId)
         {
-            try
-            {
-                return await _httpClient.GetFromJsonAsync<List<CourseDTO>>($"{BaseUrl}/instructor/{instructorId}") ?? new List<CourseDTO>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching instructor courses: {ex.Message}");
-                return new List<CourseDTO>();
-            }
+            var result = _store.Courses.Where(c => c.InstructorId == instructorId).Select(ToDto).ToList();
+            return Task.FromResult(result);
         }
+
+        private string GetInstructorName(int instructorId)
+        {
+            var instructor = _store.Instructors.FirstOrDefault(i => i.Id == instructorId);
+            return instructor == null ? "Unassigned" : $"{instructor.FirstName} {instructor.LastName}";
+        }
+
+        private CourseDTO ToDto(Course c) => new CourseDTO
+        {
+            Id = c.Id,
+            Title = c.Title,
+            Description = c.Description,
+            Code = c.Code,
+            InstructorId = c.InstructorId,
+            InstructorName = GetInstructorName(c.InstructorId),
+            Duration = c.Duration,
+            MaxStudents = c.MaxStudents,
+            Credits = c.Credits,
+            Level = c.Level,
+            StartDate = c.StartDate ?? DateTime.MinValue,
+            EndDate = c.EndDate ?? DateTime.MinValue,
+            EnrolledStudents = _store.Enrollments.Count(e => e.CourseId == c.Id && e.Status != "Dropped")
+        };
     }
 }

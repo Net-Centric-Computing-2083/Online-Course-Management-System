@@ -1,0 +1,157 @@
+@page "/results"
+@inject ICourseService CourseService
+@inject IAssignmentService AssignmentService
+@inject IEnrollmentService EnrollmentService
+@inject IStudentService StudentService
+@inject IResultService ResultService
+
+<PageTitle>Results</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Results</h1>
+        <p class="text-muted mb-0">Record and review student results for assignments.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <label class="form-label">Select Course</label>
+        <select class="form-select" @bind="selectedCourseId" @bind:after="LoadAssignmentsForCourse">
+            <option value="0">-- Select a course --</option>
+            @foreach (var course in courses)
+            {
+                <option value="@course.Id">@course.Title</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Select Assignment</label>
+        <select class="form-select" @bind="selectedAssignmentId" @bind:after="LoadGradingRows" disabled="@(selectedCourseId == 0)">
+            <option value="0">-- Select an assignment --</option>
+            @foreach (var assignment in assignments)
+            {
+                <option value="@assignment.Id">@assignment.Title (max @assignment.MaxMarks)</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (selectedAssignmentId > 0)
+{
+    @if (rows.Count == 0)
+    {
+        <div class="empty-state"><p>No students are enrolled in this course yet.</p></div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Marks (out of @currentMaxMarks)</th>
+                        <th>Feedback</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in rows)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@row.StudentName</td>
+                            <td style="max-width:120px">
+                                <input type="number" class="form-control" min="0" max="@currentMaxMarks" @bind="row.Marks" />
+                            </td>
+                            <td>
+                                <input type="text" class="form-control" @bind="row.Feedback" />
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-primary" @onclick="() => SaveResult(row)">Save</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    <div class="empty-state"><p>Select a course and an assignment above to record or review results.</p></div>
+}
+
+@code {
+    private class GradingRow
+    {
+        public int StudentId { get; set; }
+        public string StudentName { get; set; } = string.Empty;
+        public decimal Marks { get; set; }
+        public string Feedback { get; set; } = string.Empty;
+    }
+
+    private List<CourseDTO> courses = new();
+    private List<Assignment> assignments = new();
+    private List<GradingRow> rows = new();
+    private int selectedCourseId;
+    private int selectedAssignmentId;
+    private int currentMaxMarks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        courses = await CourseService.GetAllCoursesAsync();
+    }
+
+    private async Task LoadAssignmentsForCourse()
+    {
+        selectedAssignmentId = 0;
+        rows = new List<GradingRow>();
+        assignments = selectedCourseId > 0
+            ? await AssignmentService.GetAssignmentsByCourseAsync(selectedCourseId)
+            : new List<Assignment>();
+    }
+
+    private async Task LoadGradingRows()
+    {
+        rows = new List<GradingRow>();
+        if (selectedAssignmentId == 0)
+        {
+            return;
+        }
+
+        var assignment = assignments.FirstOrDefault(a => a.Id == selectedAssignmentId);
+        currentMaxMarks = assignment?.MaxMarks ?? 0;
+
+        var courseEnrollments = await EnrollmentService.GetCourseEnrollmentsAsync(selectedCourseId);
+        var existingResults = await ResultService.GetResultsByAssignmentAsync(selectedAssignmentId);
+
+        foreach (var enrollment in courseEnrollments.Where(e => e.Status != "Dropped"))
+        {
+            var student = await StudentService.GetStudentByIdAsync(enrollment.StudentId);
+            if (student == null)
+            {
+                continue;
+            }
+
+            var existing = existingResults.FirstOrDefault(r => r.StudentId == student.Id);
+            rows.Add(new GradingRow
+            {
+                StudentId = student.Id,
+                StudentName = $"{student.FirstName} {student.LastName}",
+                Marks = existing?.MarksObtained ?? 0,
+                Feedback = existing?.Feedback ?? string.Empty
+            });
+        }
+    }
+
+    private async Task SaveResult(GradingRow row)
+    {
+        await ResultService.RecordResultAsync(new Result
+        {
+            StudentId = row.StudentId,
+            AssignmentId = selectedAssignmentId,
+            MarksObtained = row.Marks,
+            Feedback = row.Feedback
+        });
+    }
+}

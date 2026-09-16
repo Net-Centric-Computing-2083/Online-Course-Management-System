@@ -1,0 +1,183 @@
+@page "/enroll"
+@inject IStudentService StudentService
+@inject ICourseService CourseService
+@inject IEnrollmentService EnrollmentService
+@inject IJSRuntime JS
+
+<PageTitle>Enrollment</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1>Course Enrollment</h1>
+        <p class="text-muted mb-0">Enroll a student into a course and manage enrollments.</p>
+    </div>
+</div>
+
+<div class="form-card">
+    <h5>New Enrollment</h5>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">Student</label>
+            <select class="form-select" @bind="selectedStudentId">
+                <option value="0">-- Select Student --</option>
+                @foreach (var student in students)
+                {
+                    <option value="@student.Id">@student.FirstName @student.LastName</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Course</label>
+            <select class="form-select" @bind="selectedCourseId">
+                <option value="0">-- Select Course --</option>
+                @foreach (var course in courses)
+                {
+                    <option value="@course.Id">@course.Title (@course.EnrolledStudents/@course.MaxStudents)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100" @onclick="Enroll">Enroll</button>
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert @(messageIsError ? "alert-danger" : "alert-success") mt-3 mb-0">@message</div>
+    }
+</div>
+
+<h5 class="mt-4">All Enrollments</h5>
+@if (enrollments.Count == 0)
+{
+    <div class="empty-state"><p>No enrollments yet.</p></div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Course</th>
+                    <th>Enrolled On</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in enrollments)
+                {
+                    <tr>
+                        <td>@StudentName(e.StudentId)</td>
+                        <td>@CourseName(e.CourseId)</td>
+                        <td>@e.EnrollmentDate.ToString("MMM dd, yyyy")</td>
+                        <td><span class="badge @StatusBadgeClass(e.Status)">@e.Status</span></td>
+                        <td style="min-width:120px">
+                            <div class="progress">
+                                <div class="progress-bar" style="width:@(e.Progress)%"></div>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            @if (e.Status != "Dropped")
+                            {
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Drop(e.Id)">Drop</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<StudentDTO> students = new();
+    private List<CourseDTO> courses = new();
+    private List<Enrollment> enrollments = new();
+    private int selectedStudentId;
+    private int selectedCourseId;
+    private string message = string.Empty;
+    private bool messageIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        students = await StudentService.GetAllStudentsAsync();
+        courses = await CourseService.GetAllCoursesAsync();
+        var all = new List<Enrollment>();
+        foreach (var course in courses)
+        {
+            all.AddRange(await EnrollmentService.GetCourseEnrollmentsAsync(course.Id));
+        }
+        enrollments = all.OrderByDescending(e => e.EnrollmentDate).ToList();
+    }
+
+    private string StudentName(int id)
+    {
+        var s = students.FirstOrDefault(x => x.Id == id);
+        return s == null ? "Unknown" : $"{s.FirstName} {s.LastName}";
+    }
+
+    private string CourseName(int id)
+    {
+        var c = courses.FirstOrDefault(x => x.Id == id);
+        return c == null ? "Unknown" : c.Title;
+    }
+
+    private async Task Enroll()
+    {
+        if (selectedStudentId == 0 || selectedCourseId == 0)
+        {
+            message = "Please select both a student and a course.";
+            messageIsError = true;
+            return;
+        }
+
+        bool valid = await EnrollmentService.ValidateEnrollmentAsync(selectedStudentId, selectedCourseId);
+        if (!valid)
+        {
+            message = "This student is already enrolled in that course, or the course is full/inactive.";
+            messageIsError = true;
+            return;
+        }
+
+        var newId = await EnrollmentService.EnrollStudentAsync(selectedStudentId, selectedCourseId);
+        if (newId == 0)
+        {
+            message = "Enrollment failed. Please try again.";
+            messageIsError = true;
+            return;
+        }
+
+        message = "Enrollment successful!";
+        messageIsError = false;
+        selectedStudentId = 0;
+        selectedCourseId = 0;
+        await LoadData();
+    }
+
+    private async Task Drop(int enrollmentId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Drop this student from the course?");
+        if (!confirmed)
+        {
+            return;
+        }
+        await EnrollmentService.DropCourseAsync(enrollmentId);
+        await LoadData();
+    }
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Active" => "badge-status-active",
+        "Completed" => "badge-status-completed",
+        "Dropped" => "badge-status-dropped",
+        "Paused" => "badge-status-paused",
+        _ => "bg-secondary"
+    };
+}
