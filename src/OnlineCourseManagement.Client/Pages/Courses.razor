@@ -1,0 +1,54 @@
+@page "/courses"
+@inject ICourseService CourseService
+
+<PageTitle>Courses</PageTitle>
+
+<h1>Available Courses</h1>
+<p>Browse all available courses in the system.</p>
+
+@if (courses == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (courses.Count == 0)
+{
+    <p><em>No courses available yet.</em></p>
+}
+else
+{
+    <div class="row">
+        @foreach (var course in courses)
+        {
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@course.Title</h5>
+                        <p class="card-text">@course.Description</p>
+                        <small class="text-muted">
+                            Instructor: @course.InstructorName | Level: @course.Level
+                        </small>
+                        <br />
+                        <a href="#" class="btn btn-sm btn-primary mt-2">View Details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<CourseDTO> courses;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            courses = await CourseService.GetAllCoursesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading courses: {ex.Message}");
+            courses = new List<CourseDTO>();
+        }
+    }
+}

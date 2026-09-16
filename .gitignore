@@ -1,0 +1,36 @@
+# Build results
+bin/
+obj/
+dist/
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# User-specific files
+.DS_Store
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Database
+*.db
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
