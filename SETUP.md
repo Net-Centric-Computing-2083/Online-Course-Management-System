@@ -154,7 +154,7 @@ Server Project:
 ---
 
 ### Phase 4: Learning Content, Results & Dashboard
-**Owner:** Bhumika Tamang
+**Owner:** Ashna, Beni and Babita
 
 #### Tasks
 1. **Lessons Management**
