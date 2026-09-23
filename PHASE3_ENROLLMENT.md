@@ -274,12 +274,12 @@ Validate in Blazor component before sending to server:
 
 ## Next Phase
 
-**Phase 4 (Bhumika Tamang)** will depend on:
+**Phase 4 ** will depend on:
 - ✓ Student registration working
 - ✓ Enrollment API working
 - ✓ Students can enroll in courses
 
-Notify Bhumika once students can successfully enroll.
+Notify once students can successfully enroll.
 
 ---
 
